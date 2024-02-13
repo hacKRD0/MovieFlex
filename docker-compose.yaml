@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  bookingsdb:
+    image: mysql
+    container_name: bookingsdb
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "bookingsdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - '3307:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: bookings
+      MYSQL_DATABASE: bookings
+  paymentsdb:
+    image: mysql
+    container_name: paymentsdb
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "paymentsdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - '3308:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: payments
+      MYSQL_DATABASE: payments
+  booking-service:
+    image: booking-service
+    container_name: booking-service
+    build: ./booking-service
+    depends_on:
+      bookingsdb:
+        condition: service_healthy
+#    ports:
+#      - '9090:9090'
+    environment:
+      DATABASE: bookingsdb
+      DB_PASSWORD: bookings
+  payment-service:
+    image: payment-service
+    container_name: payment-service
+    build: ./payment-service
+    depends_on:
+      paymentsdb:
+        condition: service_healthy
+#    ports:
+#      - '9091:9091'
+    environment:
+      DATABASE: paymentsdb
+      DB_PASSWORD: payments
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    build: ./api-gateway
+    ports:
+      - '8765:8765'
